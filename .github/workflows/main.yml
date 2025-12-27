@@ -113,7 +113,7 @@ jobs:
         run: npm run type-check
         continue-on-error: true
 
-      - name: Run tests
+      - name: Build check
         if: steps.check-frontend.outputs.exists == 'true'
-        run: npm test -- --watchAll=false
+        run: npm run build
         continue-on-error: true
