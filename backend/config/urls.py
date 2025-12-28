@@ -38,6 +38,7 @@ urlpatterns = [
     # API Endpoints
     path(f"{API_V1_PREFIX}auth/", include("accounts.urls", namespace="accounts")),
     path(f"{API_V1_PREFIX}core/", include("core.urls", namespace="core")),
+    path(f"{API_V1_PREFIX}portfolio/", include("portfolio.urls", namespace="portfolio")),
 ]
 
 # Serve media files in development

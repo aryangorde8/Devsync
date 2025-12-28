@@ -77,6 +77,7 @@ THIRD_PARTY_APPS: List[str] = [
 LOCAL_APPS: List[str] = [
     "accounts.apps.AccountsConfig",
     "core.apps.CoreConfig",
+    "portfolio.apps.PortfolioConfig",
 ]
 
 INSTALLED_APPS: List[str] = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

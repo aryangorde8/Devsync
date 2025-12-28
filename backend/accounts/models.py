@@ -110,6 +110,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
     
     # Developer-specific fields
+    title = models.CharField(
+        _("title"),
+        max_length=100,
+        blank=True,
+        help_text=_("Your professional title, e.g., 'Full Stack Developer'"),
+    )
     bio = models.TextField(_("bio"), max_length=500, blank=True)
     github_username = models.CharField(
         _("GitHub username"),

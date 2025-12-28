@@ -106,6 +106,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "full_name",
+            "title",
             "bio",
             "github_username",
             "linkedin_url",
