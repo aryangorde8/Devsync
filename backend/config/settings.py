@@ -241,11 +241,19 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Custom throttle classes for better rate limiting
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "core.throttling.BurstRateThrottle",
+        "core.throttling.SustainedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        # Custom throttle rates
+        "burst": "60/min",
+        "sustained": "1000/hour",
+        "login": "5/min",
+        "registration": "3/hour",
+        "export": "10/hour",
+        # Default rates (backward compatibility)
         "anon": "100/hour",
         "user": "1000/hour",
     },
@@ -341,6 +349,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
+# Import custom logging configuration for production use
+# Use structured JSON logging in production for better log aggregation
+USE_JSON_LOGGING = not DEBUG
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -353,10 +365,19 @@ LOGGING = {
             "format": "{levelname} {message}",
             "style": "{",
         },
+        "json": {
+            "()": "core.logging.JsonFormatter",
+        },
     },
     "filters": {
         "require_debug_true": {
             "()": "django.utils.log.RequireDebugTrue",
+        },
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "correlation_id": {
+            "()": "core.logging.CorrelationIdFilter",
         },
     },
     "handlers": {
@@ -366,25 +387,56 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
+        "console_json": {
+            "level": "INFO",
+            "filters": ["require_debug_false", "correlation_id"],
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
         "file": {
             "level": "WARNING",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": LOGS_DIR / "django.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
             "formatter": "verbose",
+        },
+        "security_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "security.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 10,
+            "formatter": "json" if USE_JSON_LOGGING else "verbose",
         },
     },
     "root": {
-        "handlers": ["console"],
+        "handlers": ["console", "console_json"],
         "level": "WARNING",
     },
     "loggers": {
         "django": {
-            "handlers": ["console"],
+            "handlers": ["console", "console_json"],
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["console"],
+            "handlers": ["console", "console_json", "file"],
             "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["security_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "devsync": {
+            "handlers": ["console", "console_json", "file"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+        "devsync.security": {
+            "handlers": ["security_file"],
+            "level": "INFO",
             "propagate": False,
         },
     },
