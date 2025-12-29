@@ -61,3 +61,4 @@ wcwidth==0.2.14
 weasyprint==67.0
 whitenoise==6.11.0
 qrcode==8.2
+psutil==7.0.0

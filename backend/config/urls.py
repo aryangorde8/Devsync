@@ -35,6 +35,9 @@ urlpatterns = [
         name="redoc",
     ),
     
+    # Health Check Endpoints
+    path("health/", include("core.health_urls")),
+    
     # API Endpoints
     path(f"{API_V1_PREFIX}auth/", include("accounts.urls", namespace="accounts")),
     path(f"{API_V1_PREFIX}core/", include("core.urls", namespace="core")),
