@@ -298,7 +298,7 @@ export function OnboardingChecklist() {
 
   const checkProgress = async () => {
     try {
-      const [profileRes, projectsRes, skillsRes, experiencesRes, socialsRes] = await Promise.all([
+      const [profile, projects, skills, experiences, socials] = await Promise.all([
         api.get('/auth/profile/'),
         api.get('/portfolio/projects/'),
         api.get('/portfolio/skills/'),
@@ -306,13 +306,17 @@ export function OnboardingChecklist() {
         api.get('/portfolio/social-links/'),
       ]);
 
-      const profile = profileRes.data;
+      const projectsList = projects?.results || projects || [];
+      const skillsList = skills?.results || skills || [];
+      const experiencesList = experiences?.results || experiences || [];
+      const socialsList = socials?.results || socials || [];
+
       setProgress({
-        profile: !!(profile.first_name && profile.last_name && profile.bio),
-        project: (projectsRes.data.results || projectsRes.data).length > 0,
-        skill: (skillsRes.data.results || skillsRes.data).length >= 3,
-        experience: (experiencesRes.data.results || experiencesRes.data).length > 0,
-        social: (socialsRes.data.results || socialsRes.data).length >= 2,
+        profile: !!(profile?.first_name && profile?.last_name && profile?.bio),
+        project: Array.isArray(projectsList) && projectsList.length > 0,
+        skill: Array.isArray(skillsList) && skillsList.length >= 3,
+        experience: Array.isArray(experiencesList) && experiencesList.length > 0,
+        social: Array.isArray(socialsList) && socialsList.length >= 2,
       });
     } catch (error) {
       console.error('Failed to check onboarding progress:', error);

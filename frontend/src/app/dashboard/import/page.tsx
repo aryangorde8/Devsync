@@ -16,11 +16,23 @@ export default function GitHubImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Extract username from GitHub URL or return as-is if it's a username
+  const extractGitHubUsername = (input: string): string => {
+    const trimmed = input.trim();
+    if (trimmed.includes('github.com/')) {
+      const match = trimmed.match(/github\.com\/([^/\s?#]+)/);
+      return match ? match[1] : '';
+    }
+    return trimmed;
+  };
+
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim()) {
-      setError('Please enter a GitHub username');
+    const githubUsername = extractGitHubUsername(username);
+    
+    if (!githubUsername) {
+      setError('Please enter a GitHub username or URL');
       return;
     }
 
@@ -30,7 +42,7 @@ export default function GitHubImportPage() {
 
     try {
       const response = await api.post('/portfolio/github/import/', {
-        github_username: username.trim(),
+        github_username: githubUsername,
       });
       setResult(response.data);
     } catch (err: unknown) {
@@ -78,19 +90,16 @@ export default function GitHubImportPage() {
           <form onSubmit={handleImport} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                GitHub Username
+                GitHub URL or Username
               </label>
               <div className="flex gap-3">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
-                    github.com/
-                  </span>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="username"
-                    className="w-full pl-28 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="https://github.com/username or username"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
                 <button

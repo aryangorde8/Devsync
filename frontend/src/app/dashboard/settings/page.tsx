@@ -402,14 +402,25 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    GitHub Username
+                    GitHub URL
                   </label>
                   <input
-                    type="text"
-                    value={profileData.github_username}
-                    onChange={(e) => setProfileData({ ...profileData, github_username: e.target.value })}
+                    type="url"
+                    value={profileData.github_username ? `https://github.com/${profileData.github_username}` : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Extract username from GitHub URL or use as-is if it's just a username
+                      let username = value;
+                      if (value.includes('github.com/')) {
+                        const match = value.match(/github\.com\/([^/\s?#]+)/);
+                        username = match ? match[1] : '';
+                      } else if (value.startsWith('https://') || value.startsWith('http://')) {
+                        username = '';
+                      }
+                      setProfileData({ ...profileData, github_username: username });
+                    }}
                     className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white focus:border-purple-500 focus:outline-none"
-                    placeholder="your-github-username"
+                    placeholder="https://github.com/your-username"
                   />
                 </div>
 

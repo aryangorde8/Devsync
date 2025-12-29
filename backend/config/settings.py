@@ -53,6 +53,9 @@ CORS_ALLOWED_ORIGINS: List[str] = os.getenv(
 
 CORS_ALLOW_CREDENTIALS: bool = True
 
+# Allow all origins in development
+CORS_ALLOW_ALL_ORIGINS: bool = DEBUG
+
 
 # =============================================================================
 # APPLICATION DEFINITION
