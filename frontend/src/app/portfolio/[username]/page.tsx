@@ -89,6 +89,7 @@ export default function PublicPortfolioPage() {
 
   useEffect(() => {
     loadPortfolio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   const loadPortfolio = async () => {
@@ -96,7 +97,7 @@ export default function PublicPortfolioPage() {
       setIsLoading(true);
       const data = await api.get<PortfolioData>(`/portfolio/public/${username}/`, { authenticated: false });
       setPortfolio(data);
-    } catch (err) {
+    } catch {
       setError('Portfolio not found');
     } finally {
       setIsLoading(false);
@@ -110,7 +111,7 @@ export default function PublicPortfolioPage() {
       await api.post(`/portfolio/public/${username}/contact/`, contactForm, { authenticated: false });
       setSent(true);
       setContactForm({ sender_name: '', sender_email: '', subject: '', message: '' });
-    } catch (err) {
+    } catch {
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);
@@ -155,6 +156,7 @@ export default function PublicPortfolioPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
         <div className="relative z-10 text-center px-4">
           {portfolio.user.avatar ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={portfolio.user.avatar}
               alt={portfolio.user.full_name}

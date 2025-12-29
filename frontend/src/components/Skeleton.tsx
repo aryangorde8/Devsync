@@ -108,17 +108,20 @@ export function SkeletonProfile() {
 }
 
 export function SkeletonChart() {
+  // Pre-computed heights for consistent rendering (avoids Math.random in render)
+  const barHeights = [45, 78, 32, 65, 89, 55, 72];
+  
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 animate-pulse">
       <div className="h-6 w-32 bg-gray-700 rounded mb-4"></div>
       <div className="h-64 bg-gray-700 rounded flex items-end justify-around p-4 gap-2">
-        {Array.from({ length: 7 }).map((_, i) => (
+        {barHeights.map((height, i) => (
           <div
             key={i}
             className="bg-gray-600 rounded-t"
             style={{
               width: '12%',
-              height: `${Math.random() * 80 + 20}%`,
+              height: `${height}%`,
             }}
           ></div>
         ))}
@@ -179,7 +182,7 @@ export function PageSkeleton({ type = 'cards' }: { type?: 'cards' | 'list' | 'fo
   );
 }
 
-export default {
+const SkeletonComponents = {
   Card: SkeletonCard,
   List: SkeletonList,
   Stats: SkeletonStats,
@@ -189,3 +192,5 @@ export default {
   Form: SkeletonForm,
   Page: PageSkeleton,
 };
+
+export default SkeletonComponents;

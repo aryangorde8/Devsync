@@ -3,13 +3,17 @@
 import React, { useEffect, useState } from 'react';
 
 export default function OfflinePage() {
-  const [isOnline, setIsOnline] = useState(false);
+  // Initialize with navigator.onLine value
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof navigator !== 'undefined') {
+      return navigator.onLine;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
-    setIsOnline(navigator.onLine);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -62,13 +66,13 @@ export default function OfflinePage() {
 
         {/* Title */}
         <h1 className="text-3xl font-bold text-white mb-4">
-          You're Offline
+          You&apos;re Offline
         </h1>
 
         {/* Description */}
         <p className="text-slate-400 mb-8 leading-relaxed">
-          It looks like you've lost your internet connection. 
-          Don't worry, we'll automatically reconnect when you're back online.
+          It looks like you&apos;ve lost your internet connection. 
+          Don&apos;t worry, we&apos;ll automatically reconnect when you&apos;re back online.
         </p>
 
         {/* Status indicator */}
@@ -102,7 +106,7 @@ export default function OfflinePage() {
               <svg className="w-5 h-5 text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Restart your router if you're on WiFi
+              Restart your router if you&apos;re on WiFi
             </li>
           </ul>
         </div>

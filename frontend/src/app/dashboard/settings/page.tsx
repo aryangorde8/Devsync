@@ -95,7 +95,7 @@ export default function SettingsPage() {
   const [newSocialLink, setNewSocialLink] = useState({ platform: 'github', url: '' });
 
   // Theme
-  const [theme, setTheme] = useState<PortfolioTheme | null>(null);
+  const [, setTheme] = useState<PortfolioTheme | null>(null);
   const [themeData, setThemeData] = useState<UpdateThemeData>({
     primary_color: '#9333ea',
     secondary_color: '#ec4899',

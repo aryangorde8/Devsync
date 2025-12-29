@@ -100,7 +100,7 @@ export default function AnalyticsPage() {
           <div className="lg:col-span-2 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
             <h2 className="text-xl font-semibold text-white mb-6">Views (Last 30 Days)</h2>
             <div className="h-64 flex items-end gap-1">
-              {analytics?.views_by_day.slice(-30).map((day, i) => (
+              {analytics?.views_by_day.slice(-30).map((day) => (
                 <div
                   key={day.date}
                   className="flex-1 bg-purple-500/50 hover:bg-purple-500 transition-colors rounded-t cursor-pointer group relative"

@@ -22,6 +22,7 @@ export default function ActivityPage() {
 
   useEffect(() => {
     fetchActivities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchActivities = async () => {
@@ -153,7 +154,7 @@ export default function ActivityPage() {
 
             {/* Activity items */}
             <div className="space-y-6">
-              {activities.map((activity, index) => (
+              {activities.map((activity) => (
                 <div key={activity.id} className="relative flex gap-4">
                   {/* Timeline dot */}
                   <div

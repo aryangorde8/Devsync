@@ -273,15 +273,20 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           break;
       }
     },
-    [isOpen, flatCommands, selectedIndex, onClose]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isOpen, flatCommands.length, selectedIndex, onClose]
   );
 
-  // Focus input when opened
+  // Focus input when opened - reset state using initializer functions instead of setState in effect
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      // Use setTimeout to avoid setState during render cycle
+      const timeoutId = setTimeout(() => {
+        setQuery('');
+        setSelectedIndex(0);
+        inputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen]);
 

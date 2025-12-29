@@ -302,6 +302,7 @@ export default function DashboardLayout({
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                     {user?.profile_picture ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={user.profile_picture}
                         alt={user.first_name}

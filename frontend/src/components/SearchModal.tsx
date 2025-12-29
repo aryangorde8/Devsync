@@ -85,7 +85,8 @@ export default function SearchModal({ isOpen, onClose, onNavigate }: SearchModal
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, results]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, selectedIndex, results, onClose]);
 
   // Search with debounce
   const search = useCallback(async (searchQuery: string) => {

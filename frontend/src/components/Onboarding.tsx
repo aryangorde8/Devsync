@@ -4,16 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
-interface OnboardingStep {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  isCompleted: boolean;
-  action: () => void;
-  isOptional?: boolean;
-}
-
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,7 +11,6 @@ interface OnboardingModalProps {
 }
 
 export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
-  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 

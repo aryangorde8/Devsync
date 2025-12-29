@@ -45,7 +45,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">Something went wrong</h2>
             <p className="text-slate-400 mb-4">
-              We're sorry, but something unexpected happened. Please try refreshing the page.
+              We&apos;re sorry, but something unexpected happened. Please try refreshing the page.
             </p>
             <div className="space-x-3">
               <button
@@ -94,7 +94,7 @@ export function PageErrorBoundary({ children }: { children: React.ReactNode }) {
             </div>
             <h1 className="text-3xl font-bold text-white mb-3">Oops! Something went wrong</h1>
             <p className="text-slate-400 mb-8">
-              We encountered an unexpected error. Don't worry, your data is safe.
+              We encountered an unexpected error. Don&apos;t worry, your data is safe.
               Please try refreshing the page or contact support if the problem persists.
             </p>
             <div className="flex items-center justify-center gap-4">

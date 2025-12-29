@@ -11,9 +11,7 @@ export default function SharePage() {
 
   useEffect(() => {
     fetchQRCode();
-    // Construct portfolio URL
-    const baseUrl = window.location.origin;
-    // Get username from profile or use placeholder
+    // Get username from profile
     fetchProfile();
   }, []);
 
@@ -140,6 +138,7 @@ export default function SharePage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
               </div>
             ) : qrCodeUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={qrCodeUrl}
                 alt="Portfolio QR Code"

@@ -279,6 +279,7 @@ export default function ProjectsPage() {
                 {/* Project Image */}
                 <div className="h-40 bg-gradient-to-br from-purple-500/20 to-pink-500/20 relative">
                   {project.featured_image ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={project.featured_image}
                       alt={project.title}

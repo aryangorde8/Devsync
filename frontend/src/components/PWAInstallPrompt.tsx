@@ -10,14 +10,17 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  // Check if already installed using initializer to avoid setState in effect
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(display-mode: standalone)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
+    // Skip if already installed
+    if (isInstalled) return;
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -39,7 +42,7 @@ export function PWAInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -101,7 +104,13 @@ export function PWAInstallPrompt() {
 
 // Offline indicator component
 export function OfflineIndicator() {
-  const [isOnline, setIsOnline] = useState(true);
+  // Initialize with navigator.onLine to avoid setState in effect
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof navigator !== 'undefined') {
+      return navigator.onLine;
+    }
+    return true;
+  });
   const [showReconnected, setShowReconnected] = useState(false);
 
   useEffect(() => {
@@ -115,8 +124,6 @@ export function OfflineIndicator() {
       setIsOnline(false);
       setShowReconnected(false);
     };
-
-    setIsOnline(navigator.onLine);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);

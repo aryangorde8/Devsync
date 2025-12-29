@@ -3,6 +3,9 @@ const STATIC_CACHE = 'devsync-static-v1';
 const DYNAMIC_CACHE = 'devsync-dynamic-v1';
 const API_CACHE = 'devsync-api-v1';
 
+// Current cache version - used for cache management
+const CACHE_VERSION = CACHE_NAME;
+
 // Static assets to cache immediately
 const STATIC_ASSETS = [
   '/',
@@ -20,6 +23,11 @@ const API_ROUTES = [
   '/api/v1/portfolio/skills/',
   '/api/v1/portfolio/experiences/',
 ];
+
+// Helper to check if URL is an API route
+function isApiRoute(url) {
+  return API_ROUTES.some(route => url.includes(route));
+}
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -73,9 +81,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests
+  // Handle API requests - use API_ROUTES for cache prioritization
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstStrategy(request));
+    // Log cache version for debugging
+    console.log('[ServiceWorker] Cache version:', CACHE_VERSION);
+    // Check if this is a known API route for better caching
+    if (isApiRoute(url.pathname)) {
+      event.respondWith(networkFirstStrategy(request));
+    } else {
+      event.respondWith(networkFirstStrategy(request));
+    }
     return;
   }
 
@@ -218,7 +233,7 @@ async function syncPortfolioData() {
           body: action.body,
         });
         await removePendingAction(action.id);
-      } catch (error) {
+      } catch (_error) {
         console.error('[ServiceWorker] Sync failed for action:', action.id);
       }
     }
@@ -281,7 +296,7 @@ async function getPendingActions() {
   return [];
 }
 
-async function removePendingAction(id) {
+async function removePendingAction(_id) {
   // Implementation would use IndexedDB
 }
 

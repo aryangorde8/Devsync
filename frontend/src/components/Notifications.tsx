@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   type: 'info' | 'success' | 'warning' | 'error' | 'message';
   title: string;
@@ -20,9 +20,9 @@ export interface Notification {
 }
 
 interface NotificationContextType {
-  notifications: Notification[];
+  notifications: AppNotification[];
   unreadCount: number;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  addNotification: (notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
@@ -47,32 +47,45 @@ interface NotificationProviderProps {
 }
 
 export function NotificationProvider({ children, websocketUrl }: NotificationProviderProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Load initial notifications from localStorage using initializer
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('notifications');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return parsed.map((n: AppNotification) => ({
+            ...n,
+            timestamp: new Date(n.timestamp),
+          }));
+        } catch (e) {
+          console.error('Failed to parse stored notifications:', e);
+        }
+      }
+    }
+    return [];
+  });
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
 
-  // Load notifications from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('notifications');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setNotifications(parsed.map((n: Notification) => ({
-          ...n,
-          timestamp: new Date(n.timestamp),
-        })));
-      } catch (e) {
-        console.error('Failed to parse stored notifications:', e);
-      }
-    }
-  }, []);
-
   // Save notifications to localStorage
   useEffect(() => {
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  // Add notification handler - defined before WebSocket effect
+  const addNotification = useCallback((notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: AppNotification = {
+      ...notification,
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+      read: false,
+    };
+
+    setNotifications((prev) => [newNotification, ...prev].slice(0, 50)); // Keep last 50
+  }, []);
 
   // WebSocket connection
   useEffect(() => {
@@ -137,18 +150,7 @@ export function NotificationProvider({ children, websocketUrl }: NotificationPro
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [websocketUrl]);
-
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-      read: false,
-    };
-
-    setNotifications((prev) => [newNotification, ...prev].slice(0, 50)); // Keep last 50
-  }, []);
+  }, [websocketUrl, addNotification]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
@@ -262,7 +264,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                 </svg>
               </div>
               <h3 className="text-white font-medium mb-1">No notifications</h3>
-              <p className="text-sm text-slate-400">You're all caught up!</p>
+              <p className="text-sm text-slate-400">You&apos;re all caught up!</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-700">
@@ -284,7 +286,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
 
 // Individual notification item
 interface NotificationItemProps {
-  notification: Notification;
+  notification: AppNotification;
   onRead: () => void;
   onClear: () => void;
 }
@@ -312,6 +314,7 @@ function NotificationItem({ notification, onRead, onClear }: NotificationItemPro
       </svg>
     ),
     message: notification.sender?.avatar ? (
+      /* eslint-disable-next-line @next/next/no-img-element */
       <img
         src={notification.sender.avatar}
         alt={notification.sender.name}
