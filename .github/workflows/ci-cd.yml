@@ -236,6 +236,9 @@ jobs:
           cd frontend
           echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1" > .env.local
 
+      - name: Clear Next.js cache
+        run: cd frontend && rm -rf .next node_modules/.cache
+
       - name: Run tests
         run: cd frontend && npm test -- --coverage --watchAll=false --passWithNoTests
         continue-on-error: true
