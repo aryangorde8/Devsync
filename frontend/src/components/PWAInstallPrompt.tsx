@@ -104,16 +104,14 @@ export function PWAInstallPrompt() {
 
 // Offline indicator component
 export function OfflineIndicator() {
-  // Initialize with navigator.onLine to avoid setState in effect
-  const [isOnline, setIsOnline] = useState(() => {
-    if (typeof navigator !== 'undefined') {
-      return navigator.onLine;
-    }
-    return true;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const [showReconnected, setShowReconnected] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setIsOnline(navigator.onLine);
+    
     const handleOnline = () => {
       setIsOnline(true);
       setShowReconnected(true);
@@ -134,6 +132,8 @@ export function OfflineIndicator() {
     };
   }, []);
 
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) return null;
   if (isOnline && !showReconnected) return null;
 
   return (
