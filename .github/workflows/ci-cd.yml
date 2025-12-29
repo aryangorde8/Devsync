@@ -231,6 +231,11 @@ jobs:
       - name: Install dependencies
         run: cd frontend && npm ci
 
+      - name: Create env file
+        run: |
+          cd frontend
+          echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1" > .env.local
+
       - name: Run tests
         run: cd frontend && npm test -- --coverage --watchAll=false --passWithNoTests
         continue-on-error: true
