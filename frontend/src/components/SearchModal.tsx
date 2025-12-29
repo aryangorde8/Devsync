@@ -96,8 +96,8 @@ export default function SearchModal({ isOpen, onClose, onNavigate }: SearchModal
 
     setIsLoading(true);
     try {
-      const response = await api.get(`/portfolio/search/?q=${encodeURIComponent(searchQuery)}`);
-      setResults(response.data);
+      const response = await api.get<SearchResult>(`/portfolio/search/?q=${encodeURIComponent(searchQuery)}`);
+      setResults(response);
       setSelectedIndex(0);
     } catch (error) {
       console.error('Search error:', error);

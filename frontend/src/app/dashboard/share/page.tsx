@@ -19,8 +19,8 @@ export default function SharePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get('/auth/profile/');
-      const username = response.data.email.split('@')[0];
+      const response = await api.get<{ email: string }>('/auth/profile/');
+      const username = response.email.split('@')[0];
       setPortfolioUrl(`${window.location.origin}/portfolio/${username}`);
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -30,10 +30,13 @@ export default function SharePage() {
   const fetchQRCode = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/portfolio/qr-code/', {
-        responseType: 'blob',
+      // Fetch QR code as blob using fetch API directly
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'}/portfolio/qr-code/`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const url = URL.createObjectURL(response.data);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       setQrCodeUrl(url);
     } catch (error) {
       console.error('Failed to fetch QR code:', error);

@@ -41,10 +41,10 @@ export default function GitHubImportPage() {
     setResult(null);
 
     try {
-      const response = await api.post('/portfolio/github/import/', {
+      const response = await api.post<ImportResult>('/portfolio/github/import/', {
         github_username: githubUsername,
       });
-      setResult(response.data);
+      setResult(response);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       setError(error.response?.data?.error || 'Failed to import repositories');

@@ -30,8 +30,9 @@ export default function ActivityPage() {
       const url = filter === 'all' 
         ? '/portfolio/activity/' 
         : `/portfolio/activity/by_model/?model=${filter}`;
-      const response = await api.get(url);
-      setActivities(response.data.results || response.data || []);
+      const response = await api.get<{ results?: ActivityItem[] } | ActivityItem[]>(url);
+      const data = response as { results?: ActivityItem[] } | ActivityItem[];
+      setActivities('results' in data && data.results ? data.results : Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch activities:', error);
     } finally {

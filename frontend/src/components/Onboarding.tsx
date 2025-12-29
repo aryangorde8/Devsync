@@ -298,18 +298,24 @@ export function OnboardingChecklist() {
 
   const checkProgress = async () => {
     try {
+      interface ProfileData { first_name?: string; last_name?: string; bio?: string; }
+      interface ListResponse<T> { results?: T[]; }
+      
       const [profile, projects, skills, experiences, socials] = await Promise.all([
-        api.get('/auth/profile/'),
-        api.get('/portfolio/projects/'),
-        api.get('/portfolio/skills/'),
-        api.get('/portfolio/experiences/'),
-        api.get('/portfolio/social-links/'),
+        api.get<ProfileData>('/auth/profile/'),
+        api.get<ListResponse<unknown> | unknown[]>('/portfolio/projects/'),
+        api.get<ListResponse<unknown> | unknown[]>('/portfolio/skills/'),
+        api.get<ListResponse<unknown> | unknown[]>('/portfolio/experiences/'),
+        api.get<ListResponse<unknown> | unknown[]>('/portfolio/social-links/'),
       ]);
 
-      const projectsList = projects?.results || projects || [];
-      const skillsList = skills?.results || skills || [];
-      const experiencesList = experiences?.results || experiences || [];
-      const socialsList = socials?.results || socials || [];
+      const getList = (data: ListResponse<unknown> | unknown[]) => 
+        'results' in data && data.results ? data.results : Array.isArray(data) ? data : [];
+      
+      const projectsList = getList(projects);
+      const skillsList = getList(skills);
+      const experiencesList = getList(experiences);
+      const socialsList = getList(socials);
 
       setProgress({
         profile: !!(profile?.first_name && profile?.last_name && profile?.bio),
