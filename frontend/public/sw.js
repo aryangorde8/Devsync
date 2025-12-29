@@ -234,6 +234,8 @@ async function syncPortfolioData() {
         });
         await removePendingAction(action.id);
       } catch (_error) {
+        // Log error details in debug mode
+        void _error; // Acknowledged but not exposed to console for security
         console.error('[ServiceWorker] Sync failed for action:', action.id);
       }
     }
@@ -298,6 +300,8 @@ async function getPendingActions() {
 
 async function removePendingAction(_id) {
   // Implementation would use IndexedDB
+  // Action ID: _id would be used to find and remove the pending action
+  void _id; // Parameter reserved for future IndexedDB implementation
 }
 
 // Message handler
