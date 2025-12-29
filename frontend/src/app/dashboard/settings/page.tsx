@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { portfolioApi, Skill, SocialLink, CreateSkillData } from '@/lib/portfolio';
+import { portfolioApi, Skill, SocialLink, CreateSkillData, PortfolioTheme, UpdateThemeData } from '@/lib/portfolio';
 import api from '@/lib/api';
 
 // Icons
@@ -41,6 +41,28 @@ const skillCategories = [
   { value: 'other', label: 'Other' },
 ];
 
+const colorPresets = [
+  { name: 'Purple', primary: '#9333ea', secondary: '#ec4899', accent: '#a855f7' },
+  { name: 'Blue', primary: '#3b82f6', secondary: '#06b6d4', accent: '#60a5fa' },
+  { name: 'Green', primary: '#22c55e', secondary: '#84cc16', accent: '#4ade80' },
+  { name: 'Orange', primary: '#f97316', secondary: '#ef4444', accent: '#fb923c' },
+  { name: 'Teal', primary: '#14b8a6', secondary: '#0891b2', accent: '#2dd4bf' },
+];
+
+const fontFamilies = [
+  { value: 'inter', label: 'Inter (Modern)' },
+  { value: 'roboto', label: 'Roboto (Clean)' },
+  { value: 'poppins', label: 'Poppins (Friendly)' },
+  { value: 'fira-code', label: 'Fira Code (Developer)' },
+  { value: 'playfair', label: 'Playfair Display (Elegant)' },
+];
+
+const layoutOptions = [
+  { value: 'modern', label: 'Modern', description: 'Clean and minimal design' },
+  { value: 'classic', label: 'Classic', description: 'Traditional portfolio layout' },
+  { value: 'creative', label: 'Creative', description: 'Bold and expressive style' },
+];
+
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, isAuthenticated, refreshUser } = useAuth();
@@ -72,6 +94,24 @@ export default function SettingsPage() {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [newSocialLink, setNewSocialLink] = useState({ platform: 'github', url: '' });
 
+  // Theme
+  const [theme, setTheme] = useState<PortfolioTheme | null>(null);
+  const [themeData, setThemeData] = useState<UpdateThemeData>({
+    primary_color: '#9333ea',
+    secondary_color: '#ec4899',
+    accent_color: '#a855f7',
+    background_color: '#111827',
+    text_color: '#ffffff',
+    font_family: 'inter',
+    layout: 'modern',
+    show_skills: true,
+    show_projects: true,
+    show_experience: true,
+    show_education: true,
+    show_certifications: true,
+    show_social_links: true,
+  });
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -96,6 +136,7 @@ export default function SettingsPage() {
     if (isAuthenticated) {
       loadSkills();
       loadSocialLinks();
+      loadTheme();
     }
   }, [isAuthenticated]);
 
@@ -181,6 +222,57 @@ export default function SettingsPage() {
     }
   };
 
+  const loadTheme = async () => {
+    try {
+      const data = await portfolioApi.getTheme();
+      setTheme(data);
+      setThemeData({
+        primary_color: data.primary_color || '#9333ea',
+        secondary_color: data.secondary_color || '#ec4899',
+        accent_color: data.accent_color || '#a855f7',
+        background_color: data.background_color || '#111827',
+        text_color: data.text_color || '#ffffff',
+        font_family: data.font_family || 'inter',
+        layout: data.layout || 'modern',
+        show_skills: data.show_skills,
+        show_projects: data.show_projects,
+        show_experience: data.show_experience,
+        show_education: data.show_education,
+        show_certifications: data.show_certifications,
+        show_social_links: data.show_social_links,
+      });
+    } catch (err) {
+      console.error('Failed to load theme:', err);
+    }
+  };
+
+  const handleThemeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await portfolioApi.updateTheme(themeData);
+      setSuccess('Theme updated successfully!');
+      loadTheme();
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to update theme');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyColorPreset = (preset: typeof colorPresets[0]) => {
+    setThemeData({
+      ...themeData,
+      primary_color: preset.primary,
+      secondary_color: preset.secondary,
+      accent_color: preset.accent,
+    });
+  };
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -235,7 +327,7 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-8 border-b border-white/10">
-          {['profile', 'skills', 'social'].map((tab) => (
+          {['profile', 'skills', 'social', 'theme'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -547,6 +639,237 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Theme Tab */}
+        {activeTab === 'theme' && (
+          <div className="max-w-2xl">
+            <form onSubmit={handleThemeSubmit} className="space-y-6">
+              {/* Color Presets */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Color Presets</h3>
+                <div className="flex flex-wrap gap-3">
+                  {colorPresets.map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => applyColorPreset(preset)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:border-white/40 transition-colors"
+                    >
+                      <div className="flex -space-x-1">
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: preset.primary }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: preset.secondary }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: preset.accent }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-300">{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Colors */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Custom Colors</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Primary Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={themeData.primary_color}
+                        onChange={(e) => setThemeData({ ...themeData, primary_color: e.target.value })}
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={themeData.primary_color}
+                        onChange={(e) => setThemeData({ ...themeData, primary_color: e.target.value })}
+                        className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Secondary Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={themeData.secondary_color}
+                        onChange={(e) => setThemeData({ ...themeData, secondary_color: e.target.value })}
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={themeData.secondary_color}
+                        onChange={(e) => setThemeData({ ...themeData, secondary_color: e.target.value })}
+                        className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Accent Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={themeData.accent_color}
+                        onChange={(e) => setThemeData({ ...themeData, accent_color: e.target.value })}
+                        className="w-10 h-10 rounded cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={themeData.accent_color}
+                        onChange={(e) => setThemeData({ ...themeData, accent_color: e.target.value })}
+                        className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Typography & Layout */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Typography & Layout</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Font Family
+                    </label>
+                    <select
+                      value={themeData.font_family}
+                      onChange={(e) => setThemeData({ ...themeData, font_family: e.target.value })}
+                      className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white focus:border-purple-500 focus:outline-none"
+                    >
+                      {fontFamilies.map((font) => (
+                        <option key={font.value} value={font.value}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Layout Style
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {layoutOptions.map((layout) => (
+                        <button
+                          key={layout.value}
+                          type="button"
+                          onClick={() => setThemeData({ ...themeData, layout: layout.value })}
+                          className={`p-4 rounded-lg border text-left transition-all ${
+                            themeData.layout === layout.value
+                              ? 'border-purple-500 bg-purple-500/20'
+                              : 'border-white/20 bg-white/5 hover:border-white/40'
+                          }`}
+                        >
+                          <p className="font-medium text-white">{layout.label}</p>
+                          <p className="text-xs text-gray-400 mt-1">{layout.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visibility Settings */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Section Visibility</h3>
+                <p className="text-sm text-gray-400 mb-4">Choose which sections to display on your public portfolio</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { key: 'show_projects', label: 'Projects' },
+                    { key: 'show_skills', label: 'Skills' },
+                    { key: 'show_experience', label: 'Experience' },
+                    { key: 'show_education', label: 'Education' },
+                    { key: 'show_certifications', label: 'Certifications' },
+                    { key: 'show_social_links', label: 'Social Links' },
+                  ].map((item) => (
+                    <label
+                      key={item.key}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 cursor-pointer hover:border-white/20 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={themeData[item.key as keyof UpdateThemeData] as boolean}
+                        onChange={(e) =>
+                          setThemeData({ ...themeData, [item.key]: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded bg-white/10 border-white/20 text-purple-500 focus:ring-purple-500"
+                      />
+                      <span className="text-white">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Preview</h3>
+                <div
+                  className="rounded-lg p-6 border border-white/10"
+                  style={{ backgroundColor: themeData.background_color }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div
+                      className="w-12 h-12 rounded-full"
+                      style={{ backgroundColor: themeData.primary_color }}
+                    />
+                    <div>
+                      <h4 className="font-bold" style={{ color: themeData.text_color }}>
+                        Your Name
+                      </h4>
+                      <p className="text-sm" style={{ color: themeData.secondary_color }}>
+                        Full Stack Developer
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <span
+                      className="px-3 py-1 rounded-full text-sm text-white"
+                      style={{ backgroundColor: themeData.primary_color }}
+                    >
+                      React
+                    </span>
+                    <span
+                      className="px-3 py-1 rounded-full text-sm text-white"
+                      style={{ backgroundColor: themeData.secondary_color }}
+                    >
+                      Python
+                    </span>
+                    <span
+                      className="px-3 py-1 rounded-full text-sm text-white"
+                      style={{ backgroundColor: themeData.accent_color }}
+                    >
+                      Node.js
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-white font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50"
+              >
+                {isLoading ? 'Saving...' : 'Save Theme Settings'}
+              </button>
+            </form>
           </div>
         )}
       </main>

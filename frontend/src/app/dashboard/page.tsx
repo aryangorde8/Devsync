@@ -179,22 +179,43 @@ export default function DashboardPage() {
                 <span className="text-white">Projects</span>
               </Link>
               <Link
-                href="/dashboard/analytics"
+                href="/dashboard/experience"
                 className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+              >
+                <span className="text-xl">💼</span>
+                <span className="text-white">Experience</span>
+              </Link>
+              <Link
+                href="/dashboard/education"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+              >
+                <span className="text-xl">🎓</span>
+                <span className="text-white">Education</span>
+              </Link>
+              <Link
+                href="/dashboard/certifications"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+              >
+                <span className="text-xl">🏆</span>
+                <span className="text-white">Certifications</span>
+              </Link>
+              <Link
+                href="/dashboard/analytics"
+                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-4 hover:bg-blue-500/30 transition-colors"
               >
                 <span className="text-xl">📊</span>
                 <span className="text-white">Analytics</span>
               </Link>
               <Link
                 href="/dashboard/messages"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-4 hover:bg-blue-500/30 transition-colors"
               >
                 <span className="text-xl">✉️</span>
                 <span className="text-white">Messages</span>
               </Link>
               <Link
                 href="/dashboard/settings"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-gray-500/20 p-4 hover:bg-gray-500/30 transition-colors"
               >
                 <span className="text-xl">⚙️</span>
                 <span className="text-white">Settings</span>
@@ -202,10 +223,10 @@ export default function DashboardPage() {
               <Link
                 href={`/portfolio/${user.email.split('@')[0]}`}
                 target="_blank"
-                className="flex items-center gap-3 rounded-lg bg-green-500/20 p-4 hover:bg-green-500/30 transition-colors col-span-2"
+                className="flex items-center gap-3 rounded-lg bg-green-500/20 p-4 hover:bg-green-500/30 transition-colors"
               >
                 <span className="text-xl">🌐</span>
-                <span className="text-white">View Public Portfolio</span>
+                <span className="text-white">View Portfolio</span>
               </Link>
             </div>
           </div>
