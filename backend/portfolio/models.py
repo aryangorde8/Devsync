@@ -55,6 +55,10 @@ class Skill(models.Model):
     class Meta:
         ordering = ["-proficiency", "name"]
         unique_together = ["user", "name"]
+        indexes = [
+            models.Index(fields=["user", "category"], name="port_skill_user_cat_idx"),
+            models.Index(fields=["-proficiency"], name="port_skill_prof_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.name} ({self.proficiency}%)"
@@ -133,6 +137,12 @@ class Project(models.Model):
     class Meta:
         ordering = ["-is_featured", "-created_at"]
         unique_together = ["user", "slug"]
+        indexes = [
+            models.Index(fields=["user", "status"], name="port_proj_user_status_idx"),
+            models.Index(fields=["user", "is_featured"], name="port_proj_user_feat_idx"),
+            models.Index(fields=["-created_at"], name="port_proj_created_idx"),
+            models.Index(fields=["slug"], name="port_proj_slug_idx"),
+        ]
     
     def __str__(self) -> str:
         return self.title
@@ -197,6 +207,10 @@ class Experience(models.Model):
     class Meta:
         ordering = ["-is_current", "-start_date"]
         verbose_name_plural = "experiences"
+        indexes = [
+            models.Index(fields=["user", "-start_date"], name="port_exp_user_date_idx"),
+            models.Index(fields=["user", "is_current"], name="port_exp_user_current_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.position} at {self.company}"
@@ -233,6 +247,9 @@ class SocialLink(models.Model):
     
     class Meta:
         unique_together = ["user", "platform"]
+        indexes = [
+            models.Index(fields=["user", "platform"], name="port_social_user_plat_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.get_platform_display()}: {self.url}"
@@ -257,6 +274,9 @@ class ProfileView(models.Model):
     
     class Meta:
         ordering = ["-viewed_at"]
+        indexes = [
+            models.Index(fields=["user", "viewed_at"], name="port_pview_user_date_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"View for {self.user.email} at {self.viewed_at}"
@@ -278,6 +298,9 @@ class ProjectView(models.Model):
     
     class Meta:
         ordering = ["-viewed_at"]
+        indexes = [
+            models.Index(fields=["project", "viewed_at"], name="port_projview_date_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"View for {self.project.title} at {self.viewed_at}"
@@ -313,6 +336,10 @@ class ContactMessage(models.Model):
     
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "status"], name="port_msg_user_read_idx"),
+            models.Index(fields=["recipient", "-created_at"], name="port_msg_user_date_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"Message from {self.sender_name}: {self.subject}"
@@ -392,6 +419,9 @@ class Education(models.Model):
     class Meta:
         ordering = ["-is_current", "-start_date"]
         verbose_name_plural = "education"
+        indexes = [
+            models.Index(fields=["user", "-start_date"], name="port_edu_user_date_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.degree} at {self.institution}"
@@ -418,6 +448,10 @@ class Certification(models.Model):
     
     class Meta:
         ordering = ["-issue_date"]
+        indexes = [
+            models.Index(fields=["user", "-issue_date"], name="port_cert_user_date_idx"),
+            models.Index(fields=["user", "expiry_date"], name="port_cert_user_expiry_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.name} - {self.issuing_organization}"
@@ -467,6 +501,10 @@ class ActivityLog(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Activity Log"
         verbose_name_plural = "Activity Logs"
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="port_actlog_user_time_idx"),
+            models.Index(fields=["action", "-created_at"], name="port_actlog_type_time_idx"),
+        ]
     
     def __str__(self) -> str:
         return f"{self.user.email} {self.action} {self.model_name} at {self.created_at}"

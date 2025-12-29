@@ -25,28 +25,28 @@ class Migration(migrations.Migration):
             model_name="project",
             index=models.Index(
                 fields=["user", "status"],
-                name="portfolio_project_user_status_idx",
+                name="port_proj_user_status_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="project",
             index=models.Index(
                 fields=["user", "is_featured"],
-                name="portfolio_project_user_featured_idx",
+                name="port_proj_user_feat_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="project",
             index=models.Index(
                 fields=["-created_at"],
-                name="portfolio_project_created_idx",
+                name="port_proj_created_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="project",
             index=models.Index(
                 fields=["slug"],
-                name="portfolio_project_slug_idx",
+                name="port_proj_slug_idx",
             ),
         ),
         # Skill indexes
@@ -54,14 +54,14 @@ class Migration(migrations.Migration):
             model_name="skill",
             index=models.Index(
                 fields=["user", "category"],
-                name="portfolio_skill_user_cat_idx",
+                name="port_skill_user_cat_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="skill",
             index=models.Index(
                 fields=["-proficiency"],
-                name="portfolio_skill_prof_idx",
+                name="port_skill_prof_idx",
             ),
         ),
         # Experience indexes for timeline queries
@@ -69,14 +69,14 @@ class Migration(migrations.Migration):
             model_name="experience",
             index=models.Index(
                 fields=["user", "-start_date"],
-                name="portfolio_exp_user_date_idx",
+                name="port_exp_user_date_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="experience",
             index=models.Index(
                 fields=["user", "is_current"],
-                name="portfolio_exp_user_current_idx",
+                name="port_exp_user_current_idx",
             ),
         ),
         # Education indexes
@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
             model_name="education",
             index=models.Index(
                 fields=["user", "-start_date"],
-                name="portfolio_edu_user_date_idx",
+                name="port_edu_user_date_idx",
             ),
         ),
         # Certification indexes
@@ -92,59 +92,59 @@ class Migration(migrations.Migration):
             model_name="certification",
             index=models.Index(
                 fields=["user", "-issue_date"],
-                name="portfolio_cert_user_date_idx",
+                name="port_cert_user_date_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="certification",
             index=models.Index(
                 fields=["user", "expiry_date"],
-                name="portfolio_cert_user_expiry_idx",
+                name="port_cert_user_expiry_idx",
             ),
         ),
         # ContactMessage indexes for inbox queries
         migrations.AddIndex(
             model_name="contactmessage",
             index=models.Index(
-                fields=["user", "is_read"],
-                name="portfolio_msg_user_read_idx",
+                fields=["recipient", "status"],
+                name="port_msg_user_read_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="contactmessage",
             index=models.Index(
-                fields=["user", "-created_at"],
-                name="portfolio_msg_user_date_idx",
+                fields=["recipient", "-created_at"],
+                name="port_msg_user_date_idx",
             ),
         ),
         # Analytics indexes for reporting
         migrations.AddIndex(
             model_name="profileview",
             index=models.Index(
-                fields=["profile", "viewed_at"],
-                name="portfolio_pview_profile_date_idx",
+                fields=["user", "viewed_at"],
+                name="port_pview_user_date_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="projectview",
             index=models.Index(
                 fields=["project", "viewed_at"],
-                name="portfolio_projview_proj_date_idx",
+                name="port_projview_date_idx",
             ),
         ),
         # ActivityLog indexes for audit trail
         migrations.AddIndex(
             model_name="activitylog",
             index=models.Index(
-                fields=["user", "-timestamp"],
-                name="portfolio_activity_user_time_idx",
+                fields=["user", "-created_at"],
+                name="port_actlog_user_time_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="activitylog",
             index=models.Index(
-                fields=["action_type", "-timestamp"],
-                name="portfolio_activity_type_time_idx",
+                fields=["action", "-created_at"],
+                name="port_actlog_type_time_idx",
             ),
         ),
         # SocialLink indexes
@@ -152,7 +152,7 @@ class Migration(migrations.Migration):
             model_name="sociallink",
             index=models.Index(
                 fields=["user", "platform"],
-                name="portfolio_social_user_plat_idx",
+                name="port_social_user_plat_idx",
             ),
         ),
     ]
