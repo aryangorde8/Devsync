@@ -7,6 +7,7 @@ analytics, and other portfolio-related endpoints.
 
 from datetime import timedelta
 
+import requests as http_requests
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -470,8 +471,6 @@ class GitHubImportView(APIView):
                 {"error": "GitHub username is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        import requests as http_requests
         
         try:
             # Fetch repos from GitHub API

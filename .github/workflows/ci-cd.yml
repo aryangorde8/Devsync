@@ -333,100 +333,67 @@ jobs:
 
   # ===========================================================================
   # Stage 6: Deploy to Kubernetes (Production)
+  # NOTE: Uncomment this job when AWS secrets are configured in GitHub:
+  # - AWS_ACCESS_KEY_ID
+  # - AWS_SECRET_ACCESS_KEY
   # ===========================================================================
-  deploy:
-    name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        if: ${{ vars.AWS_ENABLED == 'true' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name devsync --region us-east-1
-
-      - name: Deploy to Kubernetes
-        run: |
-          # Update image tags in kustomization
-          cd k8s
-          
-          # Apply manifests
-          kubectl apply -k .
-          
-          # Update deployments with new images
-          kubectl set image deployment/devsync-backend \
-            backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-            -n devsync
-          
-          kubectl set image deployment/devsync-frontend \
-            frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
-            -n devsync
-          
-          # Wait for rollout
-          kubectl rollout status deployment/devsync-backend -n devsync --timeout=300s
-          kubectl rollout status deployment/devsync-frontend -n devsync --timeout=300s
-
-      - name: Verify deployment
-        run: |
-          kubectl get pods -n devsync
-          kubectl get services -n devsync
-          
-          # Health check
-          BACKEND_POD=$(kubectl get pods -n devsync -l component=backend -o jsonpath='{.items[0].metadata.name}')
-          kubectl exec $BACKEND_POD -n devsync -- curl -s http://localhost:8000/api/v1/health/
-
-      - name: Notify deployment success
-        if: success()
-        run: |
-          echo "✅ Deployment successful!"
-          echo "Backend: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}"
-          echo "Frontend: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}"
-
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          echo "❌ Deployment failed, rolling back..."
-          kubectl rollout undo deployment/devsync-backend -n devsync
-          kubectl rollout undo deployment/devsync-frontend -n devsync
+  # deploy:
+  #   name: Deploy to Kubernetes
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   environment: production
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #
+  #     - name: Update kubeconfig
+  #       run: aws eks update-kubeconfig --name devsync --region us-east-1
+  #
+  #     - name: Deploy to Kubernetes
+  #       run: |
+  #         cd k8s
+  #         kubectl apply -k .
+  #         kubectl set image deployment/devsync-backend \
+  #           backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+  #           -n devsync
+  #         kubectl set image deployment/devsync-frontend \
+  #           frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
+  #           -n devsync
+  #         kubectl rollout status deployment/devsync-backend -n devsync --timeout=300s
+  #         kubectl rollout status deployment/devsync-frontend -n devsync --timeout=300s
+  #
+  #     - name: Verify deployment
+  #       run: |
+  #         kubectl get pods -n devsync
+  #         kubectl get services -n devsync
+  #
+  #     - name: Rollback on failure
+  #       if: failure()
+  #       run: |
+  #         kubectl rollout undo deployment/devsync-backend -n devsync
+  #         kubectl rollout undo deployment/devsync-frontend -n devsync
 
   # ===========================================================================
   # Stage 7: Post-Deployment Validation
+  # NOTE: Uncomment when deploy job is enabled
   # ===========================================================================
-  validate:
-    name: Post-Deployment Validation
-    runs-on: ubuntu-latest
-    needs: deploy
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Health check
-        run: |
-          # Wait for DNS propagation
-          sleep 30
-          
-          # Check backend health
-          curl -f https://api.devsync.io/api/v1/health/ || exit 1
-          
-          # Check frontend
-          curl -f https://devsync.io/ || exit 1
-          
-          echo "✅ All health checks passed!"
-        continue-on-error: true
-
-      - name: Run smoke tests
-        run: |
-          # Basic API tests
-          curl -s https://api.devsync.io/api/v1/health/ | jq .
-          
-          # Check metrics endpoint
-          curl -s https://api.devsync.io/api/v1/metrics/ | head -20
-        continue-on-error: true
+  # validate:
+  #   name: Post-Deployment Validation
+  #   runs-on: ubuntu-latest
+  #   needs: deploy
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - name: Health check
+  #       run: |
+  #         sleep 30
+  #         curl -f https://api.devsync.io/api/v1/health/ || exit 1
+  #         curl -f https://devsync.io/ || exit 1
+  #       continue-on-error: true
