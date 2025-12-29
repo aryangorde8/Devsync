@@ -169,6 +169,7 @@ services:
     container_name: devsync_frontend
     restart: unless-stopped
     environment:
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     ports:
       - "3000:3000"

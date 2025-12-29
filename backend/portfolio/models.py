@@ -236,3 +236,188 @@ class SocialLink(models.Model):
     
     def __str__(self) -> str:
         return f"{self.get_platform_display()}: {self.url}"
+
+
+class ProfileView(models.Model):
+    """
+    Model for tracking profile/portfolio views.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile_views",
+    )
+    visitor_ip = models.GenericIPAddressField(null=True, blank=True)
+    visitor_user_agent = models.TextField(blank=True)
+    referrer = models.URLField(blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    device_type = models.CharField(max_length=20, blank=True)  # mobile, tablet, desktop
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ["-viewed_at"]
+    
+    def __str__(self) -> str:
+        return f"View for {self.user.email} at {self.viewed_at}"
+
+
+class ProjectView(models.Model):
+    """
+    Model for tracking individual project views.
+    """
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="views",
+    )
+    visitor_ip = models.GenericIPAddressField(null=True, blank=True)
+    visitor_user_agent = models.TextField(blank=True)
+    referrer = models.URLField(blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ["-viewed_at"]
+    
+    def __str__(self) -> str:
+        return f"View for {self.project.title} at {self.viewed_at}"
+
+
+class ContactMessage(models.Model):
+    """
+    Model for storing contact form messages.
+    """
+    class Status(models.TextChoices):
+        UNREAD = "unread", _("Unread")
+        READ = "read", _("Read")
+        REPLIED = "replied", _("Replied")
+        ARCHIVED = "archived", _("Archived")
+    
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="received_messages",
+    )
+    sender_name = models.CharField(max_length=100)
+    sender_email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.UNREAD,
+    )
+    is_starred = models.BooleanField(default=False)
+    replied_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+    
+    def __str__(self) -> str:
+        return f"Message from {self.sender_name}: {self.subject}"
+
+
+class PortfolioTheme(models.Model):
+    """
+    Model for portfolio theme customization.
+    """
+    class ThemePreset(models.TextChoices):
+        DARK = "dark", _("Dark")
+        LIGHT = "light", _("Light")
+        PURPLE = "purple", _("Purple Gradient")
+        BLUE = "blue", _("Blue Ocean")
+        GREEN = "green", _("Green Forest")
+        SUNSET = "sunset", _("Sunset")
+        CUSTOM = "custom", _("Custom")
+    
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="portfolio_theme",
+    )
+    preset = models.CharField(
+        max_length=20,
+        choices=ThemePreset.choices,
+        default=ThemePreset.PURPLE,
+    )
+    # Custom colors
+    primary_color = models.CharField(max_length=7, default="#8B5CF6")  # Purple
+    secondary_color = models.CharField(max_length=7, default="#EC4899")  # Pink
+    background_color = models.CharField(max_length=7, default="#0F172A")  # Dark slate
+    text_color = models.CharField(max_length=7, default="#F8FAFC")  # Light
+    accent_color = models.CharField(max_length=7, default="#22D3EE")  # Cyan
+    
+    # Layout options
+    show_skills_section = models.BooleanField(default=True)
+    show_experience_section = models.BooleanField(default=True)
+    show_projects_section = models.BooleanField(default=True)
+    show_contact_form = models.BooleanField(default=True)
+    
+    # Hero section
+    hero_title = models.CharField(max_length=200, blank=True)
+    hero_subtitle = models.CharField(max_length=500, blank=True)
+    
+    # SEO
+    meta_title = models.CharField(max_length=60, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
+    
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self) -> str:
+        return f"Theme for {self.user.email}"
+
+
+class Education(models.Model):
+    """
+    Model representing educational background.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="education",
+    )
+    institution = models.CharField(max_length=200)
+    degree = models.CharField(max_length=200)
+    field_of_study = models.CharField(max_length=200)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    grade = models.CharField(max_length=50, blank=True)
+    description = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-is_current", "-start_date"]
+        verbose_name_plural = "education"
+    
+    def __str__(self) -> str:
+        return f"{self.degree} at {self.institution}"
+
+
+class Certification(models.Model):
+    """
+    Model representing certifications and credentials.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="certifications",
+    )
+    name = models.CharField(max_length=200)
+    issuing_organization = models.CharField(max_length=200)
+    issue_date = models.DateField()
+    expiry_date = models.DateField(null=True, blank=True)
+    credential_id = models.CharField(max_length=100, blank=True)
+    credential_url = models.URLField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-issue_date"]
+    
+    def __str__(self) -> str:
+        return f"{self.name} - {self.issuing_organization}"

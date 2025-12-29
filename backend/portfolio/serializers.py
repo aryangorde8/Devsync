@@ -7,7 +7,18 @@ and other portfolio-related models.
 
 from rest_framework import serializers
 
-from .models import Experience, Project, Skill, SocialLink
+from .models import (
+    Certification,
+    ContactMessage,
+    Education,
+    Experience,
+    PortfolioTheme,
+    ProfileView,
+    Project,
+    ProjectView,
+    Skill,
+    SocialLink,
+)
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -213,3 +224,161 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_skills = serializers.IntegerField()
     total_experiences = serializers.IntegerField()
     profile_views = serializers.IntegerField()
+    total_messages = serializers.IntegerField(default=0)
+    unread_messages = serializers.IntegerField(default=0)
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    """Serializer for contact messages."""
+    
+    status_display = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+    
+    class Meta:
+        model = ContactMessage
+        fields = [
+            "id",
+            "sender_name",
+            "sender_email",
+            "subject",
+            "message",
+            "status",
+            "status_display",
+            "is_starred",
+            "replied_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class ContactMessageCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating contact messages (public)."""
+    
+    class Meta:
+        model = ContactMessage
+        fields = ["sender_name", "sender_email", "subject", "message"]
+
+
+class PortfolioThemeSerializer(serializers.ModelSerializer):
+    """Serializer for portfolio theme customization."""
+    
+    preset_display = serializers.CharField(
+        source="get_preset_display",
+        read_only=True,
+    )
+    
+    class Meta:
+        model = PortfolioTheme
+        fields = [
+            "id",
+            "preset",
+            "preset_display",
+            "primary_color",
+            "secondary_color",
+            "background_color",
+            "text_color",
+            "accent_color",
+            "show_skills_section",
+            "show_experience_section",
+            "show_projects_section",
+            "show_contact_form",
+            "hero_title",
+            "hero_subtitle",
+            "meta_title",
+            "meta_description",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "updated_at"]
+    
+    def create(self, validated_data):
+        """Create theme with current user."""
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class EducationSerializer(serializers.ModelSerializer):
+    """Serializer for Education model."""
+    
+    class Meta:
+        model = Education
+        fields = [
+            "id",
+            "institution",
+            "degree",
+            "field_of_study",
+            "start_date",
+            "end_date",
+            "is_current",
+            "grade",
+            "description",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def create(self, validated_data):
+        """Create education with current user."""
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class CertificationSerializer(serializers.ModelSerializer):
+    """Serializer for Certification model."""
+    
+    class Meta:
+        model = Certification
+        fields = [
+            "id",
+            "name",
+            "issuing_organization",
+            "issue_date",
+            "expiry_date",
+            "credential_id",
+            "credential_url",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def create(self, validated_data):
+        """Create certification with current user."""
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class AnalyticsSerializer(serializers.Serializer):
+    """Serializer for analytics data."""
+    
+    total_profile_views = serializers.IntegerField()
+    total_project_views = serializers.IntegerField()
+    views_today = serializers.IntegerField()
+    views_this_week = serializers.IntegerField()
+    views_this_month = serializers.IntegerField()
+    top_projects = serializers.ListField(child=serializers.DictField())
+    views_by_day = serializers.ListField(child=serializers.DictField())
+    referrers = serializers.ListField(child=serializers.DictField())
+    devices = serializers.DictField()
+
+
+class PublicProfileSerializer(serializers.Serializer):
+    """Serializer for public portfolio profile."""
+    
+    id = serializers.IntegerField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    full_name = serializers.CharField()
+    title = serializers.CharField()
+    bio = serializers.CharField()
+    avatar = serializers.ImageField()
+    github_username = serializers.CharField()
+    linkedin_url = serializers.URLField()
+    portfolio_url = serializers.URLField()
+    skills = SkillSerializer(many=True)
+    projects = ProjectListSerializer(many=True)
+    experiences = ExperienceSerializer(many=True)
+    education = EducationSerializer(many=True)
+    certifications = CertificationSerializer(many=True)
+    social_links = SocialLinkSerializer(many=True)
+    theme = PortfolioThemeSerializer()
