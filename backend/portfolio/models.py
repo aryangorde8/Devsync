@@ -421,3 +421,113 @@ class Certification(models.Model):
     
     def __str__(self) -> str:
         return f"{self.name} - {self.issuing_organization}"
+
+
+class ActivityLog(models.Model):
+    """
+    Model for tracking user activities and audit trail.
+    
+    Records all CRUD operations on portfolio items for
+    security auditing and activity tracking.
+    """
+    
+    class ActionType(models.TextChoices):
+        """Action type choices."""
+        CREATE = "create", _("Created")
+        UPDATE = "update", _("Updated")
+        DELETE = "delete", _("Deleted")
+        VIEW = "view", _("Viewed")
+        LOGIN = "login", _("Logged In")
+        LOGOUT = "logout", _("Logged Out")
+        EXPORT = "export", _("Exported Data")
+        IMPORT = "import", _("Imported Data")
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="activity_logs",
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=ActionType.choices,
+    )
+    model_name = models.CharField(max_length=50)  # e.g., "Project", "Skill"
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=200, blank=True)  # String representation
+    changes = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("JSON of field changes (old_value -> new_value)"),
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Activity Log"
+        verbose_name_plural = "Activity Logs"
+    
+    def __str__(self) -> str:
+        return f"{self.user.email} {self.action} {self.model_name} at {self.created_at}"
+
+
+class GitHubImport(models.Model):
+    """
+    Model for tracking GitHub repository imports.
+    """
+    
+    class Status(models.TextChoices):
+        PENDING = "pending", _("Pending")
+        IN_PROGRESS = "in_progress", _("In Progress")
+        COMPLETED = "completed", _("Completed")
+        FAILED = "failed", _("Failed")
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="github_imports",
+    )
+    github_username = models.CharField(max_length=100)
+    repo_name = models.CharField(max_length=200, blank=True)  # Specific repo or all
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    repos_found = models.PositiveIntegerField(default=0)
+    repos_imported = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+    
+    def __str__(self) -> str:
+        return f"Import from {self.github_username} - {self.status}"
+
+
+class SavedDraft(models.Model):
+    """
+    Model for auto-saved form drafts.
+    
+    Stores unsaved form data to prevent data loss.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_drafts",
+    )
+    form_type = models.CharField(max_length=50)  # e.g., "project", "experience"
+    form_data = models.JSONField(default=dict)
+    object_id = models.PositiveIntegerField(null=True, blank=True)  # For edit drafts
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-updated_at"]
+        unique_together = ["user", "form_type", "object_id"]
+    
+    def __str__(self) -> str:
+        return f"Draft {self.form_type} for {self.user.email}"

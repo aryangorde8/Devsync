@@ -221,6 +221,27 @@ export default function DashboardPage() {
                 <span className="text-white text-sm">Resume Builder</span>
               </Link>
               <Link
+                href="/dashboard/import"
+                className="flex items-center gap-3 rounded-lg bg-gray-500/20 p-3 hover:bg-gray-500/30 transition-colors"
+              >
+                <span className="text-lg">📥</span>
+                <span className="text-white text-sm">GitHub Import</span>
+              </Link>
+              <Link
+                href="/dashboard/share"
+                className="flex items-center gap-3 rounded-lg bg-pink-500/20 p-3 hover:bg-pink-500/30 transition-colors"
+              >
+                <span className="text-lg">🔗</span>
+                <span className="text-white text-sm">Share & QR</span>
+              </Link>
+              <Link
+                href="/dashboard/activity"
+                className="flex items-center gap-3 rounded-lg bg-cyan-500/20 p-3 hover:bg-cyan-500/30 transition-colors"
+              >
+                <span className="text-lg">📜</span>
+                <span className="text-white text-sm">Activity Log</span>
+              </Link>
+              <Link
                 href="/dashboard/settings"
                 className="flex items-center gap-3 rounded-lg bg-gray-500/20 p-3 hover:bg-gray-500/30 transition-colors"
               >

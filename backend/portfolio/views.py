@@ -18,18 +18,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import (
+    ActivityLog,
     Certification,
     ContactMessage,
     Education,
     Experience,
+    GitHubImport,
     PortfolioTheme,
     ProfileView,
     Project,
     ProjectView,
+    SavedDraft,
     Skill,
     SocialLink,
 )
 from .serializers import (
+    ActivityLogSerializer,
     AnalyticsSerializer,
     CertificationSerializer,
     ContactMessageCreateSerializer,
@@ -40,6 +44,7 @@ from .serializers import (
     PortfolioThemeSerializer,
     ProjectDetailSerializer,
     ProjectListSerializer,
+    SavedDraftSerializer,
     SkillSerializer,
     SocialLinkSerializer,
 )
@@ -657,3 +662,468 @@ class ExportDataView(APIView):
         }
         
         return Response(data)
+
+
+class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing activity logs (read-only)."""
+    
+    serializer_class = ActivityLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return ActivityLog.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=["get"])
+    def recent(self, request: Request) -> Response:
+        """Get recent activity (last 20 items)."""
+        logs = self.get_queryset()[:20]
+        serializer = self.get_serializer(logs, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"])
+    def by_model(self, request: Request) -> Response:
+        """Get activity grouped by model type."""
+        model_name = request.query_params.get("model")
+        if model_name:
+            logs = self.get_queryset().filter(model_name__iexact=model_name)
+        else:
+            logs = self.get_queryset()
+        serializer = self.get_serializer(logs[:50], many=True)
+        return Response(serializer.data)
+
+
+def log_activity(user, action: str, model_name: str, obj=None, changes: dict = None, request=None):
+    """Helper function to log user activity."""
+    ip_address = None
+    user_agent = ""
+    
+    if request:
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(",")[0]
+        else:
+            ip_address = request.META.get("REMOTE_ADDR")
+        user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
+    
+    ActivityLog.objects.create(
+        user=user,
+        action=action,
+        model_name=model_name,
+        object_id=obj.pk if obj else None,
+        object_repr=str(obj)[:200] if obj else "",
+        changes=changes or {},
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+
+class SearchView(APIView):
+    """API view for full-text search across portfolio."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request: Request) -> Response:
+        """Search across all portfolio content."""
+        query = request.query_params.get("q", "").strip()
+        
+        if not query or len(query) < 2:
+            return Response({
+                "error": "Search query must be at least 2 characters"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        results = {
+            "projects": [],
+            "skills": [],
+            "experiences": [],
+            "education": [],
+            "certifications": [],
+            "total": 0,
+        }
+        
+        # Search Projects
+        projects = Project.objects.filter(
+            user=user
+        ).filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(short_description__icontains=query)
+        )[:10]
+        results["projects"] = ProjectListSerializer(projects, many=True).data
+        
+        # Search Skills
+        skills = Skill.objects.filter(
+            user=user,
+            name__icontains=query
+        )[:10]
+        results["skills"] = SkillSerializer(skills, many=True).data
+        
+        # Search Experiences
+        experiences = Experience.objects.filter(
+            user=user
+        ).filter(
+            Q(company__icontains=query) |
+            Q(position__icontains=query) |
+            Q(description__icontains=query)
+        )[:10]
+        results["experiences"] = ExperienceSerializer(experiences, many=True).data
+        
+        # Search Education
+        education = Education.objects.filter(
+            user=user
+        ).filter(
+            Q(institution__icontains=query) |
+            Q(degree__icontains=query) |
+            Q(field_of_study__icontains=query)
+        )[:10]
+        results["education"] = EducationSerializer(education, many=True).data
+        
+        # Search Certifications
+        certifications = Certification.objects.filter(
+            user=user
+        ).filter(
+            Q(name__icontains=query) |
+            Q(issuing_organization__icontains=query)
+        )[:10]
+        results["certifications"] = CertificationSerializer(certifications, many=True).data
+        
+        # Calculate total
+        results["total"] = (
+            len(results["projects"]) +
+            len(results["skills"]) +
+            len(results["experiences"]) +
+            len(results["education"]) +
+            len(results["certifications"])
+        )
+        
+        # Log search activity
+        log_activity(user, "view", "Search", changes={"query": query}, request=request)
+        
+        return Response(results)
+
+
+class BulkOperationsView(APIView):
+    """API view for bulk operations on portfolio items."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request: Request) -> Response:
+        """Perform bulk operations."""
+        operation = request.data.get("operation")
+        model_type = request.data.get("model_type")
+        ids = request.data.get("ids", [])
+        
+        if not operation or not model_type or not ids:
+            return Response({
+                "error": "operation, model_type, and ids are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        model_map = {
+            "project": Project,
+            "skill": Skill,
+            "experience": Experience,
+            "education": Education,
+            "certification": Certification,
+            "message": ContactMessage,
+        }
+        
+        model_class = model_map.get(model_type.lower())
+        if not model_class:
+            return Response({
+                "error": f"Invalid model_type: {model_type}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get user's objects only
+        if model_type.lower() == "message":
+            queryset = model_class.objects.filter(recipient=user, id__in=ids)
+        else:
+            queryset = model_class.objects.filter(user=user, id__in=ids)
+        
+        count = queryset.count()
+        
+        if operation == "delete":
+            queryset.delete()
+            log_activity(user, "delete", model_type.title(), 
+                        changes={"deleted_ids": ids, "count": count}, request=request)
+            return Response({"message": f"Deleted {count} {model_type}(s)"})
+        
+        elif operation == "archive" and model_type.lower() == "project":
+            queryset.update(status="archived")
+            log_activity(user, "update", "Project", 
+                        changes={"archived_ids": ids}, request=request)
+            return Response({"message": f"Archived {count} project(s)"})
+        
+        elif operation == "make_public" and model_type.lower() == "project":
+            queryset.update(is_public=True)
+            return Response({"message": f"Made {count} project(s) public"})
+        
+        elif operation == "make_private" and model_type.lower() == "project":
+            queryset.update(is_public=False)
+            return Response({"message": f"Made {count} project(s) private"})
+        
+        elif operation == "mark_read" and model_type.lower() == "message":
+            queryset.update(status=ContactMessage.Status.READ)
+            return Response({"message": f"Marked {count} message(s) as read"})
+        
+        elif operation == "mark_unread" and model_type.lower() == "message":
+            queryset.update(status=ContactMessage.Status.UNREAD)
+            return Response({"message": f"Marked {count} message(s) as unread"})
+        
+        else:
+            return Response({
+                "error": f"Invalid operation: {operation}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class QRCodeView(APIView):
+    """API view for generating QR codes for portfolio."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request: Request) -> HttpResponse:
+        """Generate QR code for public portfolio URL."""
+        import io
+        
+        try:
+            import qrcode
+            from qrcode.image.styledpil import StyledPilImage
+            from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
+        except ImportError:
+            return Response({
+                "error": "QR code generation not available. Install qrcode[pil] package."
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        
+        user = request.user
+        
+        # Get the portfolio URL
+        base_url = request.build_absolute_uri("/").rstrip("/")
+        username = user.email.split("@")[0]
+        portfolio_url = f"{base_url}/portfolio/{username}"
+        
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(portfolio_url)
+        qr.make(fit=True)
+        
+        # Create image with rounded modules
+        try:
+            img = qr.make_image(
+                image_factory=StyledPilImage,
+                module_drawer=RoundedModuleDrawer(),
+                fill_color="#8B5CF6",  # Purple
+                back_color="white"
+            )
+        except Exception:
+            # Fallback to basic image
+            img = qr.make_image(fill_color="#8B5CF6", back_color="white")
+        
+        # Save to bytes
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+        
+        response = HttpResponse(buffer.getvalue(), content_type="image/png")
+        response["Content-Disposition"] = f'inline; filename="portfolio_qr_{username}.png"'
+        
+        return response
+
+
+class SavedDraftViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing saved form drafts."""
+    
+    serializer_class = SavedDraftSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return SavedDraft.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=["get"])
+    def get_draft(self, request: Request) -> Response:
+        """Get a specific draft by form_type and optional object_id."""
+        form_type = request.query_params.get("form_type")
+        object_id = request.query_params.get("object_id")
+        
+        if not form_type:
+            return Response({
+                "error": "form_type is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        draft = self.get_queryset().filter(form_type=form_type)
+        if object_id:
+            draft = draft.filter(object_id=object_id)
+        else:
+            draft = draft.filter(object_id__isnull=True)
+        
+        draft = draft.first()
+        if draft:
+            return Response(SavedDraftSerializer(draft).data)
+        return Response({"form_data": None})
+    
+    @action(detail=False, methods=["post"])
+    def save_draft(self, request: Request) -> Response:
+        """Save or update a draft."""
+        form_type = request.data.get("form_type")
+        form_data = request.data.get("form_data", {})
+        object_id = request.data.get("object_id")
+        
+        if not form_type:
+            return Response({
+                "error": "form_type is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        draft, created = SavedDraft.objects.update_or_create(
+            user=request.user,
+            form_type=form_type,
+            object_id=object_id,
+            defaults={"form_data": form_data}
+        )
+        
+        return Response(SavedDraftSerializer(draft).data)
+    
+    @action(detail=False, methods=["delete"])
+    def clear_draft(self, request: Request) -> Response:
+        """Clear a specific draft."""
+        form_type = request.query_params.get("form_type")
+        object_id = request.query_params.get("object_id")
+        
+        if not form_type:
+            return Response({
+                "error": "form_type is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        draft = self.get_queryset().filter(form_type=form_type)
+        if object_id:
+            draft = draft.filter(object_id=object_id)
+        else:
+            draft = draft.filter(object_id__isnull=True)
+        
+        deleted, _ = draft.delete()
+        return Response({"deleted": deleted > 0})
+
+
+class ReorderView(APIView):
+    """API view for reordering portfolio items."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request: Request) -> Response:
+        """Reorder items by updating their order field."""
+        model_type = request.data.get("model_type")
+        items = request.data.get("items", [])  # List of {id, order}
+        
+        if not model_type or not items:
+            return Response({
+                "error": "model_type and items are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        
+        if model_type.lower() == "project":
+            for item in items:
+                Project.objects.filter(
+                    user=user, id=item["id"]
+                ).update(order=item["order"])
+            return Response({"message": "Projects reordered successfully"})
+        
+        return Response({
+            "error": f"Reordering not supported for {model_type}"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StatsOverviewView(APIView):
+    """API view for comprehensive portfolio statistics."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request: Request) -> Response:
+        """Get comprehensive statistics for the portfolio."""
+        user = request.user
+        now = timezone.now()
+        month_ago = now - timedelta(days=30)
+        week_ago = now - timedelta(days=7)
+        
+        # Basic counts
+        stats = {
+            "projects": {
+                "total": Project.objects.filter(user=user).count(),
+                "featured": Project.objects.filter(user=user, is_featured=True).count(),
+                "completed": Project.objects.filter(user=user, status="completed").count(),
+                "in_progress": Project.objects.filter(user=user, status="in_progress").count(),
+            },
+            "skills": {
+                "total": Skill.objects.filter(user=user).count(),
+                "by_category": dict(
+                    Skill.objects.filter(user=user)
+                    .values("category")
+                    .annotate(count=Count("id"))
+                    .values_list("category", "count")
+                ),
+            },
+            "experience": {
+                "total": Experience.objects.filter(user=user).count(),
+                "current": Experience.objects.filter(user=user, is_current=True).count(),
+            },
+            "education": {
+                "total": Education.objects.filter(user=user).count(),
+            },
+            "certifications": {
+                "total": Certification.objects.filter(user=user).count(),
+                "expiring_soon": Certification.objects.filter(
+                    user=user,
+                    expiry_date__lte=now + timedelta(days=90),
+                    expiry_date__gte=now
+                ).count(),
+            },
+            "messages": {
+                "total": ContactMessage.objects.filter(recipient=user).count(),
+                "unread": ContactMessage.objects.filter(
+                    recipient=user, status=ContactMessage.Status.UNREAD
+                ).count(),
+                "this_week": ContactMessage.objects.filter(
+                    recipient=user, created_at__gte=week_ago
+                ).count(),
+            },
+            "views": {
+                "total_profile": ProfileView.objects.filter(user=user).count(),
+                "total_projects": ProjectView.objects.filter(project__user=user).count(),
+                "this_month": ProfileView.objects.filter(
+                    user=user, viewed_at__gte=month_ago
+                ).count(),
+                "this_week": ProfileView.objects.filter(
+                    user=user, viewed_at__gte=week_ago
+                ).count(),
+            },
+            "activity": {
+                "recent_count": ActivityLog.objects.filter(
+                    user=user, created_at__gte=week_ago
+                ).count(),
+            },
+        }
+        
+        # Profile completeness score
+        completeness = 0
+        checks = [
+            (user.first_name and user.last_name, 10),
+            (getattr(user, "bio", ""), 15),
+            (getattr(user, "title", ""), 10),
+            (Project.objects.filter(user=user).exists(), 15),
+            (Skill.objects.filter(user=user).count() >= 5, 15),
+            (Experience.objects.filter(user=user).exists(), 10),
+            (Education.objects.filter(user=user).exists(), 10),
+            (SocialLink.objects.filter(user=user).count() >= 2, 10),
+            (user.avatar if hasattr(user, "avatar") else None, 5),
+        ]
+        
+        for check, score in checks:
+            if check:
+                completeness += score
+        
+        stats["profile_completeness"] = completeness
+        
+        return Response(stats)

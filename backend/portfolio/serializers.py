@@ -8,14 +8,17 @@ and other portfolio-related models.
 from rest_framework import serializers
 
 from .models import (
+    ActivityLog,
     Certification,
     ContactMessage,
     Education,
     Experience,
+    GitHubImport,
     PortfolioTheme,
     ProfileView,
     Project,
     ProjectView,
+    SavedDraft,
     Skill,
     SocialLink,
 )
@@ -382,3 +385,125 @@ class PublicProfileSerializer(serializers.Serializer):
     certifications = CertificationSerializer(many=True)
     social_links = SocialLinkSerializer(many=True)
     theme = PortfolioThemeSerializer()
+
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    """Serializer for activity logs."""
+    
+    action_display = serializers.CharField(
+        source="get_action_display",
+        read_only=True,
+    )
+    time_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ActivityLog
+        fields = [
+            "id",
+            "action",
+            "action_display",
+            "model_name",
+            "object_id",
+            "object_repr",
+            "changes",
+            "ip_address",
+            "created_at",
+            "time_ago",
+        ]
+        read_only_fields = ["id", "created_at"]
+    
+    def get_time_ago(self, obj):
+        """Return human-readable time ago string."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff < timedelta(minutes=1):
+            return "just now"
+        elif diff < timedelta(hours=1):
+            minutes = int(diff.total_seconds() / 60)
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        elif diff < timedelta(days=1):
+            hours = int(diff.total_seconds() / 3600)
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        elif diff < timedelta(days=7):
+            days = diff.days
+            return f"{days} day{'s' if days != 1 else ''} ago"
+        elif diff < timedelta(days=30):
+            weeks = diff.days // 7
+            return f"{weeks} week{'s' if weeks != 1 else ''} ago"
+        else:
+            return obj.created_at.strftime("%b %d, %Y")
+
+
+class GitHubImportSerializer(serializers.ModelSerializer):
+    """Serializer for GitHub import status."""
+    
+    status_display = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+    
+    class Meta:
+        model = GitHubImport
+        fields = [
+            "id",
+            "github_username",
+            "repo_name",
+            "status",
+            "status_display",
+            "repos_found",
+            "repos_imported",
+            "error_message",
+            "created_at",
+            "completed_at",
+        ]
+        read_only_fields = ["id", "created_at", "completed_at"]
+
+
+class SavedDraftSerializer(serializers.ModelSerializer):
+    """Serializer for saved drafts."""
+    
+    class Meta:
+        model = SavedDraft
+        fields = [
+            "id",
+            "form_type",
+            "form_data",
+            "object_id",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def create(self, validated_data):
+        """Create draft with current user."""
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class SearchResultSerializer(serializers.Serializer):
+    """Serializer for search results."""
+    
+    projects = ProjectListSerializer(many=True)
+    skills = SkillSerializer(many=True)
+    experiences = ExperienceSerializer(many=True)
+    education = EducationSerializer(many=True)
+    certifications = CertificationSerializer(many=True)
+    total = serializers.IntegerField()
+
+
+class BulkOperationSerializer(serializers.Serializer):
+    """Serializer for bulk operations."""
+    
+    operation = serializers.ChoiceField(choices=[
+        "delete", "archive", "make_public", "make_private", 
+        "mark_read", "mark_unread"
+    ])
+    model_type = serializers.ChoiceField(choices=[
+        "project", "skill", "experience", "education", 
+        "certification", "message"
+    ])
+    ids = serializers.ListField(child=serializers.IntegerField())
