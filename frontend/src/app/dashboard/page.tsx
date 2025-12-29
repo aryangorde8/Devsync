@@ -170,63 +170,70 @@ export default function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-2 mb-8">
           <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Link
                 href="/dashboard/projects"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-3 hover:bg-purple-500/30 transition-colors"
               >
-                <span className="text-xl">🚀</span>
-                <span className="text-white">Projects</span>
+                <span className="text-lg">🚀</span>
+                <span className="text-white text-sm">Projects</span>
               </Link>
               <Link
                 href="/dashboard/experience"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-3 hover:bg-purple-500/30 transition-colors"
               >
-                <span className="text-xl">💼</span>
-                <span className="text-white">Experience</span>
+                <span className="text-lg">💼</span>
+                <span className="text-white text-sm">Experience</span>
               </Link>
               <Link
                 href="/dashboard/education"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-3 hover:bg-purple-500/30 transition-colors"
               >
-                <span className="text-xl">🎓</span>
-                <span className="text-white">Education</span>
+                <span className="text-lg">🎓</span>
+                <span className="text-white text-sm">Education</span>
               </Link>
               <Link
                 href="/dashboard/certifications"
-                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-4 hover:bg-purple-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-purple-500/20 p-3 hover:bg-purple-500/30 transition-colors"
               >
-                <span className="text-xl">🏆</span>
-                <span className="text-white">Certifications</span>
+                <span className="text-lg">🏆</span>
+                <span className="text-white text-sm">Certifications</span>
               </Link>
               <Link
                 href="/dashboard/analytics"
-                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-4 hover:bg-blue-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-3 hover:bg-blue-500/30 transition-colors"
               >
-                <span className="text-xl">📊</span>
-                <span className="text-white">Analytics</span>
+                <span className="text-lg">📊</span>
+                <span className="text-white text-sm">Analytics</span>
               </Link>
               <Link
                 href="/dashboard/messages"
-                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-4 hover:bg-blue-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-blue-500/20 p-3 hover:bg-blue-500/30 transition-colors"
               >
-                <span className="text-xl">✉️</span>
-                <span className="text-white">Messages</span>
+                <span className="text-lg">✉️</span>
+                <span className="text-white text-sm">Messages</span>
+              </Link>
+              <Link
+                href="/dashboard/resume"
+                className="flex items-center gap-3 rounded-lg bg-yellow-500/20 p-3 hover:bg-yellow-500/30 transition-colors"
+              >
+                <span className="text-lg">📄</span>
+                <span className="text-white text-sm">Resume Builder</span>
               </Link>
               <Link
                 href="/dashboard/settings"
-                className="flex items-center gap-3 rounded-lg bg-gray-500/20 p-4 hover:bg-gray-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-gray-500/20 p-3 hover:bg-gray-500/30 transition-colors"
               >
-                <span className="text-xl">⚙️</span>
-                <span className="text-white">Settings</span>
+                <span className="text-lg">⚙️</span>
+                <span className="text-white text-sm">Settings</span>
               </Link>
               <Link
                 href={`/portfolio/${user.email.split('@')[0]}`}
                 target="_blank"
-                className="flex items-center gap-3 rounded-lg bg-green-500/20 p-4 hover:bg-green-500/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg bg-green-500/20 p-3 hover:bg-green-500/30 transition-colors col-span-2"
               >
-                <span className="text-xl">🌐</span>
-                <span className="text-white">View Portfolio</span>
+                <span className="text-lg">🌐</span>
+                <span className="text-white text-sm">View Public Portfolio</span>
               </Link>
             </div>
           </div>

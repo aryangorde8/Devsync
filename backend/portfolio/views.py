@@ -9,6 +9,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -559,3 +560,100 @@ class ResumeDataView(APIView):
                 Project.objects.filter(user=user, is_public=True)[:5], many=True
             ).data,
         })
+
+
+class ResumeDownloadView(APIView):
+    """API view for downloading resume as PDF."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request: Request) -> HttpResponse:
+        """Generate and download PDF resume."""
+        from .pdf_generator import generate_resume_pdf
+        
+        user = request.user
+        
+        # Gather all user data
+        user_data = {
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "title": getattr(user, "title", ""),
+            "bio": getattr(user, "bio", ""),
+            "github_username": getattr(user, "github_username", ""),
+            "linkedin_url": getattr(user, "linkedin_url", ""),
+            "portfolio_url": getattr(user, "portfolio_url", ""),
+            "skills": SkillSerializer(
+                Skill.objects.filter(user=user), many=True
+            ).data,
+            "experiences": ExperienceSerializer(
+                Experience.objects.filter(user=user).order_by("-start_date"), many=True
+            ).data,
+            "education": EducationSerializer(
+                Education.objects.filter(user=user).order_by("-start_date"), many=True
+            ).data,
+            "certifications": CertificationSerializer(
+                Certification.objects.filter(user=user).order_by("-issue_date"), many=True
+            ).data,
+            "projects": ProjectDetailSerializer(
+                Project.objects.filter(user=user, is_public=True).order_by("-is_featured", "-created_at")[:5],
+                many=True
+            ).data,
+        }
+        
+        # Generate PDF
+        pdf_bytes = generate_resume_pdf(user_data)
+        
+        # Create response
+        filename = f"{user.first_name or 'resume'}_{user.last_name or 'cv'}.pdf".replace(" ", "_")
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        
+        return response
+
+
+class ExportDataView(APIView):
+    """API view for exporting all user data as JSON."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request: Request) -> Response:
+        """Export all user portfolio data."""
+        user = request.user
+        
+        data = {
+            "exported_at": timezone.now().isoformat(),
+            "profile": {
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "title": getattr(user, "title", ""),
+                "bio": getattr(user, "bio", ""),
+                "github_username": getattr(user, "github_username", ""),
+                "linkedin_url": getattr(user, "linkedin_url", ""),
+                "portfolio_url": getattr(user, "portfolio_url", ""),
+            },
+            "projects": ProjectDetailSerializer(
+                Project.objects.filter(user=user), many=True
+            ).data,
+            "skills": SkillSerializer(
+                Skill.objects.filter(user=user), many=True
+            ).data,
+            "experiences": ExperienceSerializer(
+                Experience.objects.filter(user=user), many=True
+            ).data,
+            "education": EducationSerializer(
+                Education.objects.filter(user=user), many=True
+            ).data,
+            "certifications": CertificationSerializer(
+                Certification.objects.filter(user=user), many=True
+            ).data,
+            "social_links": SocialLinkSerializer(
+                SocialLink.objects.filter(user=user), many=True
+            ).data,
+            "theme": PortfolioThemeSerializer(
+                PortfolioTheme.objects.filter(user=user).first()
+            ).data if PortfolioTheme.objects.filter(user=user).exists() else None,
+        }
+        
+        return Response(data)

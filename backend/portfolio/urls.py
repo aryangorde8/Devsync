@@ -14,6 +14,7 @@ from .views import (
     DashboardStatsView,
     EducationViewSet,
     ExperienceViewSet,
+    ExportDataView,
     GitHubImportView,
     PortfolioThemeView,
     ProjectViewSet,
@@ -21,6 +22,7 @@ from .views import (
     PublicPortfolioView,
     PublicProjectView,
     ResumeDataView,
+    ResumeDownloadView,
     SkillViewSet,
     SocialLinkViewSet,
 )
@@ -45,8 +47,11 @@ urlpatterns = [
     path("theme/", PortfolioThemeView.as_view(), name="theme"),
     # GitHub Import
     path("github/import/", GitHubImportView.as_view(), name="github-import"),
-    # Resume Data
+    # Resume Data & PDF Download
     path("resume/", ResumeDataView.as_view(), name="resume-data"),
+    path("resume/download/", ResumeDownloadView.as_view(), name="resume-download"),
+    # Export Data
+    path("export/", ExportDataView.as_view(), name="export-data"),
     # Public Portfolio (no auth required)
     path("public/<str:username>/", PublicPortfolioView.as_view(), name="public-portfolio"),
     path("public/<str:username>/contact/", PublicContactView.as_view(), name="public-contact"),
